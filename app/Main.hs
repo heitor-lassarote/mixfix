@@ -3,9 +3,14 @@ module Main (main) where
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 
 import Mixfix
-import Parser
+  ( Associativity (..), Fixity (..), Operator (..), Precedence (..)
+  , PrecedenceGraph, expr
+  )
+import Parser (NamePart (..), runParser)
+import Pretty (prettyExpr)
 
 terminals :: [Operator]
 terminals = parentheses : digits
@@ -36,16 +41,16 @@ graph =
   , terminalsPrec
   ]
 
-zero, add, paren, if' :: Text
-zero = "0"
-add = "0 + 1"
-paren = "(0)"
-if' = "if 0 then 1 else 2"
+printTest :: Text -> IO ()
+printTest i =
+  case runParser i $ expr graph of
+    Nothing ->
+      putStrLn "Failed to run parser."
+    Just ex -> do
+      putStrLn $ "Produced AST: " <> show ex
+      putStrLn $ "Prettified: " <> show (prettyExpr ex)
 
 main :: IO ()
 main = do
-  let go i = print $ runParser i $ expr graph
-  go zero
-  go add
-  go paren
-  go if'
+  input <- Text.getLine
+  printTest input

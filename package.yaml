@@ -45,6 +45,7 @@ default-extensions:
 library:
   source-dirs: src
   dependencies:
+  - prettyprinter
   - text
 
 executables:
@@ -61,11 +62,18 @@ executables:
 
 tests:
   mixfix-paper-test:
-    main:                Spec.hs
+    main:                Main.hs
     source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -F -pgmF=tasty-autocollect
+    build-tools:
+    - tasty-autocollect:tasty-autocollect
     dependencies:
     - mixfix-paper
+    - tasty
+    - tasty-autocollect
+    - tasty-hunit
+    - text

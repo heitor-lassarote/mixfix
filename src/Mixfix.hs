@@ -23,20 +23,20 @@ data Fixity
 
 newtype Operator = Operator
   { nameParts :: NonEmpty NamePart
-  } deriving stock (Show)
+  } deriving stock (Eq, Show)
 
 data Precedence = Precedence (Fixity -> [Operator]) [Precedence]
 
 type PrecedenceGraph = [Precedence]
 
-newtype Expr = Expr Ex deriving stock (Show)
+newtype Expr = Expr Ex deriving stock (Eq, Show)
 
-data In = In Operator [Expr] deriving stock (Show)
+data In = In Operator [Expr] deriving stock (Eq, Show)
 
 data Out
   = Similar Ex
   | Tighter Expr
-  deriving stock (Show)
+  deriving stock (Eq, Show)
 
 data Ex
   = ClosedEx In  -- ^ ((_))
@@ -45,7 +45,7 @@ data Ex
   | InNonEx Expr In Expr  -- ^ _(_)_
   | InLeftEx Out In Expr  -- ^ _(_)l_
   | InRightEx Expr In Out  -- ^ _(_)r_
-  deriving stock (Show)
+  deriving stock (Eq, Show)
 
 expr :: PrecedenceGraph -> Parser Expr
 expr g = precs g g

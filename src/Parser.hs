@@ -14,7 +14,7 @@ import Data.Text qualified as Text
 newtype NamePart = NamePart
   { namePart :: Text
   } deriving newtype (IsString)
-    deriving stock (Show)
+    deriving stock (Eq, Show)
 
 data Parser a where
   Fail :: Parser a
