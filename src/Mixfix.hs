@@ -1,7 +1,7 @@
 module Mixfix
   ( PrecedenceGraph, Precedence (..), Associativity (..), Fixity (..)
   , Operator (..), NamePart (..)
-  , Expr (..), Ex (..), In (..), Out (..)
+  , Expr (..), In (..), Out (..)
   , expr
   ) where
 
@@ -29,16 +29,14 @@ data Precedence = Precedence (Fixity -> [Operator]) [Precedence]
 
 type PrecedenceGraph = [Precedence]
 
-newtype Expr = Expr Ex deriving stock (Eq, Show)
-
 data In = In Operator [Expr] deriving stock (Eq, Show)
 
 data Out
-  = Similar Ex
+  = Similar Expr
   | Tighter Expr
   deriving stock (Eq, Show)
 
-data Ex
+data Expr
   = ClosedEx In  -- ^ ((_))
   | PostEx Out In  -- ^ _(_))
   | PreEx In Out  -- ^ ((_)_
@@ -52,13 +50,13 @@ expr g = precs g g
 
 precs :: PrecedenceGraph -> [Precedence] -> Parser Expr
 precs _ []       = Fail
-precs g (p : ps) = Map Expr (prec g p) `Or` precs g ps
+precs g (p : ps) = prec g p `Or` precs g ps
 
 inner :: PrecedenceGraph -> [Operator] -> Parser In
 inner _ []         = Fail
 inner g (op : ops) = Map (In op) (expr g `Between` nameParts op) `Or` inner g ops
 
-prec :: PrecedenceGraph -> Precedence -> Parser Ex
+prec :: PrecedenceGraph -> Precedence -> Parser Expr
 prec g (Precedence ops sucs) = foldl1 Or
   [ ClosedEx `Map` op Closed
   , InNonEx  `Map` pUp `App` op (Infix NonAssociative) `App` pUp
@@ -73,7 +71,7 @@ prec g (Precedence ops sucs) = foldl1 Or
     pUp :: Parser Expr
     pUp = precs g sucs
 
-    preRight, postLeft :: Parser (Out -> Ex)
+    preRight, postLeft :: Parser (Out -> Expr)
     preRight =
       let
         pre = PreEx `Map` op Prefix
@@ -87,10 +85,10 @@ prec g (Precedence ops sucs) = foldl1 Or
       in
       post `Or` lInf
 
-    appR :: NonEmpty (Out -> Ex) -> Expr -> Ex
+    appR :: NonEmpty (Out -> Expr) -> Expr -> Expr
     appR fs e = foldrNE (\f e' -> f (Similar e')) (\f -> f (Tighter e)) fs
 
-    appL :: Expr -> NonEmpty (Out -> Ex) -> Ex
+    appL :: Expr -> NonEmpty (Out -> Expr) -> Expr
     appL e fs = foldlNE (\e' f -> f (Similar e')) (\f -> f (Tighter e)) fs
 
 foldrNE :: (a -> b -> b) -> (a -> b) -> NonEmpty a -> b
