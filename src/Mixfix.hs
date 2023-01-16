@@ -1,12 +1,16 @@
 module Mixfix
   ( PrecedenceGraph, Precedence (..), Associativity (..), Fixity (..)
-  , Operator (..), NamePart (..)
+  , Operator (..), SomeOperator (..), NamePart (..)
   , Expr (..), In (..), Out (..)
   , expr
   ) where
 
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Type.Equality (testEquality)
+import Data.Type.Nat (Nat (..))
+import Data.Vec.Lazy (Vec (..))
+import Type.Reflection (Typeable, (:~:)(..), typeOf)
 
 import Parser (NamePart (..), Parser (..))
 
@@ -21,15 +25,31 @@ data Fixity
   | Postfix
   | Closed
 
-newtype Operator = Operator
-  { nameParts :: NonEmpty NamePart
-  } deriving stock (Eq, Show)
+newtype Operator (arity :: Nat) = Operator
+  { nameParts :: Typeable arity => Vec ('S arity) NamePart
+  }
 
-data Precedence = Precedence (Fixity -> [Operator]) [Precedence]
+deriving stock instance Typeable arity => Eq (Operator arity)
+deriving stock instance Typeable arity => Show (Operator arity)
+
+data SomeOperator where
+  SomeOperator :: Typeable arity => Operator arity -> SomeOperator
+
+data Precedence where
+  Precedence :: (Fixity -> [SomeOperator]) -> [Precedence] -> Precedence
 
 type PrecedenceGraph = [Precedence]
 
-data In = In Operator [Expr] deriving stock (Eq, Show)
+data In where
+  In :: Typeable arity => Operator arity -> Vec arity Expr -> In
+
+instance Eq In where
+  In op1 exps1 == In op2 exps2 =
+    case typeOf op1 `testEquality` typeOf op2 of
+      Nothing -> False
+      Just Refl -> op1 == op2 && exps1 == exps2
+
+deriving stock instance Show In
 
 data Out
   = Similar Expr
@@ -52,9 +72,9 @@ precs :: PrecedenceGraph -> [Precedence] -> Parser Expr
 precs _ []       = Fail
 precs g (p : ps) = prec g p `Or` precs g ps
 
-inner :: PrecedenceGraph -> [Operator] -> Parser In
-inner _ []         = Fail
-inner g (op : ops) = Map (In op) (expr g `Between` nameParts op) `Or` inner g ops
+inner :: PrecedenceGraph -> [SomeOperator] -> Parser In
+inner _ []                      = Fail
+inner g (SomeOperator op : ops) = Map (In op) (expr g `Between` nameParts op) `Or` inner g ops
 
 prec :: PrecedenceGraph -> Precedence -> Parser Expr
 prec g (Precedence ops sucs) = foldl1 Or

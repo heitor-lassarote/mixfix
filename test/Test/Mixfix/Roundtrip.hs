@@ -5,14 +5,14 @@ module Test.Mixfix.Roundtrip
 
 import Mixfix
   ( Associativity (..), Fixity (..), Operator (..), Precedence (..)
-  , PrecedenceGraph, expr
+  , PrecedenceGraph, SomeOperator (..), expr
   )
 import Parser (NamePart (..), runParser)
 import Pretty (prettyExpr)
 
-import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Vec.Lazy (Vec (..))
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase, (@=?))
 
@@ -38,23 +38,23 @@ test =
     , ("If expression", "if 0 then 1 else 2")
     ]
 
-terminals :: [Operator]
+terminals :: [SomeOperator]
 terminals = parentheses : digits
   where
-    parentheses :: Operator
-    parentheses = Operator $ "(" :| [")"]
+    parentheses :: SomeOperator
+    parentheses = SomeOperator $ Operator $ "(" ::: ")" ::: VNil
 
-    digits :: [Operator]
-    digits = map (\x -> Operator (NamePart (Text.pack $ show x) :| [])) [0 .. 9 :: Int]
+    digits :: [SomeOperator]
+    digits = map (\x -> SomeOperator $ Operator (NamePart (Text.pack $ show x) ::: VNil)) [0 .. 9 :: Int]
 
 terminalsPrec :: Precedence
 terminalsPrec = Precedence (\case Closed -> terminals; _ -> []) []
 
-ifThenElse :: Operator
-ifThenElse = Operator $ "if" :| ["then", "else"]
+ifThenElse :: SomeOperator
+ifThenElse = SomeOperator $ Operator $ "if" ::: "then" ::: "else" ::: VNil
 
-addSubtract :: [Operator]
-addSubtract = [Operator ("+" :| []), Operator ("-" :| [])]
+addSubtract :: [SomeOperator]
+addSubtract = [SomeOperator $ Operator ("+" ::: VNil), SomeOperator $ Operator ("-" ::: VNil)]
 
 graph :: PrecedenceGraph
 graph =

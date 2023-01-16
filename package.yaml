@@ -34,19 +34,26 @@ ghc-options:
 - -Wredundant-constraints
 
 default-extensions:
+- DataKinds
 - DerivingStrategies
 - GADTs
 - GeneralizedNewtypeDeriving
 - ImportQualifiedPost
+- ImpredicativeTypes
+- KindSignatures
 - LambdaCase
 - OverloadedStrings
+- RankNTypes
+- StandaloneDeriving
 - TupleSections
 
 library:
   source-dirs: src
   dependencies:
+  - fin
   - prettyprinter
   - text
+  - vec
 
 executables:
   mixfix-paper-exe:
@@ -59,6 +66,7 @@ executables:
     dependencies:
     - mixfix-paper
     - text
+    - vec
 
 tests:
   mixfix-paper-test:
@@ -77,3 +85,4 @@ tests:
     - tasty-autocollect
     - tasty-hunit
     - text
+    - vec

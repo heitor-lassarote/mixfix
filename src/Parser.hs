@@ -10,6 +10,8 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Type.Nat (Nat (..))
+import Data.Vec.Lazy (Vec (..), withDict)
 
 newtype NamePart = NamePart
   { namePart :: Text
@@ -22,7 +24,7 @@ data Parser a where
   App :: Parser (a -> b) -> Parser a -> Parser b
   Map :: (a -> b) -> Parser a -> Parser b
   Plus :: Parser a -> Parser (NonEmpty a)
-  Between :: Parser a -> NonEmpty NamePart -> Parser [a]
+  Between :: Parser a -> Vec ('S arity) NamePart -> Parser (Vec arity a)
 
 runParser :: Text -> Parser a -> Maybe a
 runParser i' =
@@ -36,7 +38,7 @@ runParser i' =
       fmap f <$> go o px
     go i (Map f px) = fmap f <$> go i px
     go i (Plus p) = plus i p
-    go i (Between p (n :| ns)) = between i p (n : ns)
+    go i (Between p ns) = between i p ns
 
     plus :: Text -> Parser a -> Maybe (Text, NonEmpty a)
     plus i p = case star i p of
@@ -48,13 +50,12 @@ runParser i' =
       Nothing     -> (i, [])
       Just (o, x) -> fmap (x :) (star o p)
 
-    between :: Text -> Parser a -> [NamePart] -> Maybe (Text, [a])
-    between _ _ []       = Nothing
-    between i _ [n]      = (, []) <$> matchName i n
-    between i p (n : ns) = do
+    between :: Text -> Parser a -> Vec ('S n) NamePart -> Maybe (Text, Vec n a)
+    between i _ (n ::: VNil) = (, VNil) <$> matchName i n
+    between i p (n ::: ns@(_ ::: _)) = do
       o <- matchName i n
-      (o', x) <- go o p
-      fmap (x :) <$> between o' p ns
+      (o', x) <- withDict ns $ go o p
+      fmap (x :::) <$> between o' p ns
 
     matchName :: Text -> NamePart -> Maybe Text
     matchName i (NamePart n) = dropSpaces <$> Text.stripPrefix n i

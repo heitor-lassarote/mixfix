@@ -2,7 +2,8 @@ module Pretty
   ( prettyExpr, prettyIn, prettyOut, prettyNamePart
   ) where
 
-import Data.List.NonEmpty qualified as NonEmpty
+import Data.Type.Nat (Nat (..))
+import Data.Vec.Lazy (Vec (..))
 import Prettyprinter (Doc, pretty, (<+>))
 
 import Mixfix
@@ -19,12 +20,11 @@ prettyExpr = \case
   InRightEx expr in' out -> prettyExpr expr <+> prettyIn in' <+> prettyOut out
 
 prettyIn :: In -> Doc ann
-prettyIn (In (Operator ns') exprs) = go (NonEmpty.toList ns') exprs
+prettyIn (In (Operator ns') exprs) = go ns' exprs
   where
-    go :: [NamePart] -> [Expr] -> Doc ann
-    go [n] [] = prettyNamePart n
-    go (n : ns) (x : xs) = prettyNamePart n <+> prettyExpr x <+> go ns xs
-    go _ _ = undefined
+    go :: Vec ('S arity) NamePart -> Vec arity Expr -> Doc ann
+    go (n ::: VNil) VNil = prettyNamePart n
+    go (n ::: ns) (x ::: xs) = prettyNamePart n <+> prettyExpr x <+> go ns xs
 
 prettyOut :: Out -> Doc ann
 prettyOut = \case

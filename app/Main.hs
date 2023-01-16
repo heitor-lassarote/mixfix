@@ -1,34 +1,34 @@
 module Main (main) where
 
-import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
+import Data.Vec.Lazy (Vec (..))
 
 import Mixfix
   ( Associativity (..), Fixity (..), Operator (..), Precedence (..)
-  , PrecedenceGraph, expr
+  , PrecedenceGraph, SomeOperator (..), expr
   )
 import Parser (NamePart (..), runParser)
 import Pretty (prettyExpr)
 
-terminals :: [Operator]
+terminals :: [SomeOperator]
 terminals = parentheses : digits
   where
-    parentheses :: Operator
-    parentheses = Operator $ "(" :| [")"]
+    parentheses :: SomeOperator
+    parentheses = SomeOperator $ Operator $ "(" ::: ")" ::: VNil
 
-    digits :: [Operator]
-    digits = map (\x -> Operator (NamePart (Text.pack $ show x) :| [])) [0 .. 9 :: Int]
+    digits :: [SomeOperator]
+    digits = map (\x -> SomeOperator $ Operator (NamePart (Text.pack $ show x) ::: VNil)) [0 .. 9 :: Int]
 
 terminalsPrec :: Precedence
 terminalsPrec = Precedence (\case Closed -> terminals; _ -> []) []
 
-ifThenElse :: Operator
-ifThenElse = Operator $ "if" :| ["then", "else"]
+ifThenElse :: SomeOperator
+ifThenElse = SomeOperator $ Operator $ "if" ::: "then" ::: "else" ::: VNil
 
-addSubtract :: [Operator]
-addSubtract = [Operator ("+" :| []), Operator ("-" :| [])]
+addSubtract :: [SomeOperator]
+addSubtract = [SomeOperator $ Operator ("+" ::: VNil), SomeOperator $ Operator ("-" ::: VNil)]
 
 graph :: PrecedenceGraph
 graph =
