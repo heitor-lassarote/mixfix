@@ -39,7 +39,6 @@ default-extensions:
 - GADTs
 - GeneralizedNewtypeDeriving
 - ImportQualifiedPost
-- ImpredicativeTypes
 - KindSignatures
 - LambdaCase
 - OverloadedStrings
