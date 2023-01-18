@@ -58,7 +58,13 @@ runParser i' =
       fmap (x :::) <$> between o' p ns
 
     matchName :: Text -> NamePart -> Maybe Text
-    matchName i (NamePart n) = dropSpaces <$> Text.stripPrefix n i
+    matchName i (NamePart n) = do
+      o <- Text.stripPrefix n i
+      case Text.uncons o of
+        Nothing -> Just o
+        Just (hd, tl)
+          | isSpace hd -> Just $ dropSpaces tl
+          | otherwise -> Nothing
 
     dropSpaces :: Text -> Text
     dropSpaces = Text.dropWhile isSpace

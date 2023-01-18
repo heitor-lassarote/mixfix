@@ -34,7 +34,7 @@ test =
   testGroup "Roundtrip: Parse -> Pretty print -> Parse -> Compare" $ map (uncurry mkTest)
     [ ("Terminal", "0")
     , ("Sum of terminals", "0 + 1")
-    , ("Parentheses", "(0)")
+    , ("Parentheses", "( 0 )")
     , ("If expression", "if 0 then 1 else 2")
     ]
 
