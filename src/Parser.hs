@@ -11,7 +11,7 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Nat (Nat (..))
-import Data.Vec.Lazy (Vec (..), withDict)
+import Data.Vec.Lazy (Vec (..))
 
 newtype NamePart = NamePart
   { namePart :: Text
@@ -54,7 +54,7 @@ runParser i' =
     between i _ (n ::: VNil) = (, VNil) <$> matchName i n
     between i p (n ::: ns@(_ ::: _)) = do
       o <- matchName i n
-      (o', x) <- withDict ns $ go o p
+      (o', x) <- go o p
       fmap (x :::) <$> between o' p ns
 
     matchName :: Text -> NamePart -> Maybe Text
